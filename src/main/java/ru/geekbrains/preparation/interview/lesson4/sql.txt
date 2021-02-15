@@ -1,0 +1,58 @@
+CREATE DATABASE cinema;
+
+use cinema;
+
+
+CREATE TABLE films (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(120) NOT NULL,
+  `date` DATE NOT NULL,
+  `begin` TIME NOT NULL,
+  `time` TIME NOT NULL,
+  `price` DECIMAL(11,2) NOT NULL,
+  PRIMARY KEY (`id`));
+
+
+INSERT INTO films (title, date, begin, time, price) VALUES
+('Film1', '2021-02-10', '09:00:00', '1:30', 400) ,
+('Film2', '2021-02-10', '11:00:00', '2:00', 500),
+('Film1', '2021-02-10', '13:30:00', '1:30', 500),
+('Film4', '2021-02-10', '14:30:00', '1:00', 400),
+('Film1', '2021-02-10', '18:00:00', '2:00', 1000),
+('Film4', '2021-02-10', '20:30:00', '2:00', 1200),
+('Film2', '2021-02-10', '22:00:00', '2:00', 1200);
+
+
+CREATE TABLE tickets (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `film_id` BIGINT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `film_id_idx` (`film_id` ASC),
+  CONSTRAINT `film_id`
+    FOREIGN KEY (`film_id`)
+    REFERENCES `films` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+INSERT INTO tickets (film_id) VALUES
+(2), (4), (3), (4), (1), (5), (1), (1), (3), (4), (6), (6), (1), (1), (1), (1), (5), (4), (2), (2), (2), (4), (5), (6), (7);
+
+
+SELECT t1.title as 'film 1', t1.begin, t1.time, t2.title as 'film 2', t2.begin, t2.time
+FROM films t1
+JOIN films t2 ON t1.date = t2.date
+WHERE t1.id != t2.id AND (t2.begin BETWEEN t1.begin AND (t1.begin + t1.time))
+ORDER BY t1.begin ASC;
+
+SELECT t1.title as 'film 1', t1.begin, t1.time, t2.title as 'film 2', t2.begin, MIN(TIMESTAMPDIFF(minute, TIME(t1.begin + t1.time), t2.begin)) as break
+FROM films t1
+JOIN films t2 ON t1.date = t2.date
+WHERE ((t2.begin - (t1.begin + t1.time) >=30 ))
+group by t1.begin
+order by break DESC;
+
+SELECT  title, COUNT(*) as count, SUM(films.price) as sum from films
+JOIN tickets ON films.id = tickets.film_id GROUP BY title
+union
+SELECT  'TOTAL', COUNT(*) as count, SUM(films.price) as sum from films
+JOIN tickets ON films.id = tickets.film_id;
